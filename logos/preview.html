@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>NextStep — Opciones de logo</title>
+<style>
+  body {
+    margin: 0;
+    padding: 48px 24px;
+    background: #f4f2ed;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #191817;
+  }
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+  p.sub {
+    text-align: center;
+    color: #55524b;
+    margin-bottom: 40px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #dedacf;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+  .swatches {
+    display: flex;
+    gap: 10px;
+  }
+  .swatch {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .swatch.light { background: #f4f2ed; border: 1px solid #dedacf; }
+  .swatch.dark { background: #131211; }
+  .swatch img { width: 64px; height: 64px; display: block; }
+  .wordmark img { width: auto; height: 40px; }
+  .label {
+    margin-top: 14px;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <h1>NextStep — Opciones de logo</h1>
+  <p class="sub">9 propuestas, cada una sobre fondo claro y oscuro</p>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    const logos = [
+      { file: "01-monogram-ink.svg", name: "Monograma N (tinta)" },
+      { file: "02-monogram-lime.svg", name: "Monograma N (lima)" },
+      { file: "03-flow-arrow.svg", name: "Flechas de flujo" },
+      { file: "04-status-dots.svg", name: "Puntos de estado" },
+      { file: "05-stacked-cards.svg", name: "Tarjetas apiladas" },
+      { file: "06-wordmark.svg", name: "Logotipo (texto)", wordmark: true },
+      { file: "07-check-circle.svg", name: "Check en círculo" },
+      { file: "08-monogram-arrow.svg", name: "N + flecha" },
+      { file: "09-progress-ring.svg", name: "Anillo de progreso" },
+    ];
+
+    const grid = document.getElementById("grid");
+    for (const logo of logos) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="swatches">
+          <div class="swatch light ${logo.wordmark ? "wordmark" : ""}"><img src="${logo.file}" alt="${logo.name}" /></div>
+          <div class="swatch dark ${logo.wordmark ? "wordmark" : ""}"><img src="${logo.file}" alt="${logo.name}" /></div>
+        </div>
+        <div class="label">${logo.name}</div>
+      `;
+      grid.appendChild(card);
+    }
+  </script>
+</body>
+</html>

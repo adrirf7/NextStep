@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <rect width="120" height="120" rx="28" fill="#E8FF57"/>
+  <path d="M65 42 L81 58 L65 74" stroke="#55524B" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="51" y="86" font-family="Georgia, 'Instrument Serif', serif" font-size="66" font-style="italic" fill="#191817" text-anchor="middle">N</text>
+  <path d="M81 42 L97 58 L81 74" stroke="#191817" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
