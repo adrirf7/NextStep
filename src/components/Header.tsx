@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function Header({ dark, onToggleDark }: Props) {
-  const { user, signOut, demoMode } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <motion.header
@@ -24,11 +24,6 @@ export default function Header({ dark, onToggleDark }: Props) {
           <span className="hidden text-base font-extrabold tracking-tight sm:block">
             NextStep
           </span>
-          {(demoMode || user?.isDemo) && (
-            <span className="rounded-full bg-lime px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ink">
-              demo
-            </span>
-          )}
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">

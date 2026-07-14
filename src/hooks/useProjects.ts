@@ -1,26 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { addDoc, collection, deleteDoc, doc, onSnapshot, query } from "firebase/firestore";
-import { db, firebaseEnabled } from "../firebase";
+import { db } from "../firebase";
 import type { AppUser, Project } from "../types";
 import { PROJECT_COLORS } from "../types";
 
-const LOCAL_KEY = "nextstep.projects";
-
-function readLocal(): Project[] {
-  try {
-    return JSON.parse(localStorage.getItem(LOCAL_KEY) ?? "[]") as Project[];
-  } catch {
-    return [];
-  }
-}
-
-function writeLocal(projects: Project[]) {
-  localStorage.setItem(LOCAL_KEY, JSON.stringify(projects));
-}
-
 /**
- * Con Firebase configurado y usuario real: Firestore en tiempo real
- * (users/{uid}/projects). En modo demo o invitado: localStorage.
+ * Firestore en tiempo real (users/{uid}/projects).
  * No hace cascade-delete de tareas: eso lo coordina quien tenga
  * ambos hooks (useTasks + useProjects) cargados a la vez.
  */
@@ -28,20 +13,13 @@ export function useProjects(user: AppUser | null) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [ready, setReady] = useState(false);
 
-  const useCloud = firebaseEnabled && !!db && !!user && !user.isDemo;
-
   useEffect(() => {
-    if (!user) {
+    if (!user || !db) {
       setProjects([]);
       setReady(false);
       return;
     }
-    if (!useCloud) {
-      setProjects(readLocal());
-      setReady(true);
-      return;
-    }
-    const q = query(collection(db!, "users", user.uid, "projects"));
+    const q = query(collection(db, "users", user.uid, "projects"));
     const unsub = onSnapshot(
       q,
       (snap) => {
@@ -57,44 +35,29 @@ export function useProjects(user: AppUser | null) {
       },
     );
     return unsub;
-  }, [user, useCloud]);
+  }, [user]);
 
   const addProject = useCallback(
     async (name: string) => {
+      if (!user || !db) return "";
       const now = Date.now();
       const color = PROJECT_COLORS[projects.length % PROJECT_COLORS.length];
-      if (useCloud) {
-        const ref = await addDoc(collection(db!, "users", user!.uid, "projects"), {
-          name,
-          color,
-          createdAt: now,
-        });
-        return ref.id;
-      }
-      const project: Project = { id: crypto.randomUUID(), name, color, createdAt: now };
-      setProjects((prev) => {
-        const next = [...prev, project];
-        writeLocal(next);
-        return next;
+      const ref = await addDoc(collection(db, "users", user.uid, "projects"), {
+        name,
+        color,
+        createdAt: now,
       });
-      return project.id;
+      return ref.id;
     },
-    [useCloud, user, projects.length],
+    [user, projects.length],
   );
 
   const removeProject = useCallback(
     async (id: string) => {
-      if (useCloud) {
-        await deleteDoc(doc(db!, "users", user!.uid, "projects", id));
-      } else {
-        setProjects((prev) => {
-          const next = prev.filter((p) => p.id !== id);
-          writeLocal(next);
-          return next;
-        });
-      }
+      if (!user || !db) return;
+      await deleteDoc(doc(db, "users", user.uid, "projects", id));
     },
-    [useCloud, user],
+    [user],
   );
 
   return { projects, ready, addProject, removeProject };

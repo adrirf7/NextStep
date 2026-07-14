@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, CircleDashed, Loader2, Sparkles } from "lucide-react";
+import { CircleDashed, Loader2 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { firebaseEnabled } from "../firebase";
 import Logo from "./Logo";
 
 const WORDS = ["Planifica.", "Avanza.", "Termina."];
@@ -39,15 +40,13 @@ function GoogleIcon() {
 }
 
 export default function Login() {
-  const { demoMode, signInWithGoogle, signInAsGuest } = useAuth();
+  const { signInWithGoogle } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleGoogle() {
-    if (demoMode) {
-      setError(
-        "Firebase aún no está configurado: entra como invitado o añade tus claves en .env.local",
-      );
+    if (!firebaseEnabled) {
+      setError("Firebase aún no está configurado: añade tus claves en .env.local");
       return;
     }
     setBusy(true);
@@ -84,16 +83,6 @@ export default function Login() {
           <Logo className="h-9 w-9 rounded-xl" />
           <span className="text-lg font-extrabold tracking-tight">NextStep</span>
         </motion.div>
-        {demoMode && (
-          <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-xs font-semibold text-ink-soft dark:border-night-line dark:bg-night-raised dark:text-ink-faint"
-          >
-            <Sparkles className="h-3 w-3" /> Modo demo
-          </motion.span>
-        )}
       </header>
 
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-24 text-center">
@@ -141,7 +130,7 @@ export default function Login() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-10 flex flex-col items-center gap-3 sm:flex-row"
+          className="mt-10"
         >
           <motion.button
             whileHover={{ scale: 1.03 }}
@@ -152,16 +141,6 @@ export default function Login() {
           >
             {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleIcon />}
             Continuar con Google
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={signInAsGuest}
-            className="group flex items-center gap-2 rounded-full border border-line bg-surface px-7 py-3.5 text-sm font-bold text-ink transition-colors hover:border-ink dark:border-night-line dark:bg-night-raised dark:text-paper dark:hover:border-paper"
-          >
-            Entrar como invitado
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </motion.button>
         </motion.div>
 

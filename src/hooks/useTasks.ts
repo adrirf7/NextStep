@@ -8,10 +8,8 @@ import {
   query,
   updateDoc,
 } from "firebase/firestore";
-import { db, firebaseEnabled } from "../firebase";
+import { db } from "../firebase";
 import type { AppUser, Task, TaskPriority, TaskStatus } from "../types";
-
-const LOCAL_KEY = "nextstep.tasks";
 
 export interface TaskDraft {
   title: string;
@@ -22,40 +20,18 @@ export interface TaskDraft {
   dueDate: number | null;
 }
 
-function readLocal(): Task[] {
-  try {
-    return JSON.parse(localStorage.getItem(LOCAL_KEY) ?? "[]") as Task[];
-  } catch {
-    return [];
-  }
-}
-
-function writeLocal(tasks: Task[]) {
-  localStorage.setItem(LOCAL_KEY, JSON.stringify(tasks));
-}
-
-/**
- * Con Firebase configurado y usuario real: Firestore en tiempo real
- * (users/{uid}/tasks). En modo demo o invitado: localStorage.
- */
+/** Firestore en tiempo real (users/{uid}/tasks). */
 export function useTasks(user: AppUser | null) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [ready, setReady] = useState(false);
 
-  const useCloud = firebaseEnabled && !!db && !!user && !user.isDemo;
-
   useEffect(() => {
-    if (!user) {
+    if (!user || !db) {
       setTasks([]);
       setReady(false);
       return;
     }
-    if (!useCloud) {
-      setTasks(readLocal());
-      setReady(true);
-      return;
-    }
-    const q = query(collection(db!, "users", user.uid, "tasks"));
+    const q = query(collection(db, "users", user.uid, "tasks"));
     const unsub = onSnapshot(
       q,
       (snap) => {
@@ -72,68 +48,38 @@ export function useTasks(user: AppUser | null) {
       },
     );
     return unsub;
-  }, [user, useCloud]);
+  }, [user]);
 
   const addTask = useCallback(
     async (draft: TaskDraft) => {
+      if (!user || !db) return;
       const now = Date.now();
-      if (useCloud) {
-        await addDoc(collection(db!, "users", user!.uid, "tasks"), {
-          ...draft,
-          createdAt: now,
-          updatedAt: now,
-        });
-      } else {
-        const task: Task = {
-          id: crypto.randomUUID(),
-          ...draft,
-          createdAt: now,
-          updatedAt: now,
-        };
-        setTasks((prev) => {
-          const next = [task, ...prev];
-          writeLocal(next);
-          return next;
-        });
-      }
+      await addDoc(collection(db, "users", user.uid, "tasks"), {
+        ...draft,
+        createdAt: now,
+        updatedAt: now,
+      });
     },
-    [useCloud, user],
+    [user],
   );
 
   const updateTask = useCallback(
     async (id: string, patch: Partial<TaskDraft>) => {
-      const now = Date.now();
-      if (useCloud) {
-        await updateDoc(doc(db!, "users", user!.uid, "tasks", id), {
-          ...patch,
-          updatedAt: now,
-        });
-      } else {
-        setTasks((prev) => {
-          const next = prev.map((t) =>
-            t.id === id ? { ...t, ...patch, updatedAt: now } : t,
-          );
-          writeLocal(next);
-          return next;
-        });
-      }
+      if (!user || !db) return;
+      await updateDoc(doc(db, "users", user.uid, "tasks", id), {
+        ...patch,
+        updatedAt: Date.now(),
+      });
     },
-    [useCloud, user],
+    [user],
   );
 
   const removeTask = useCallback(
     async (id: string) => {
-      if (useCloud) {
-        await deleteDoc(doc(db!, "users", user!.uid, "tasks", id));
-      } else {
-        setTasks((prev) => {
-          const next = prev.filter((t) => t.id !== id);
-          writeLocal(next);
-          return next;
-        });
-      }
+      if (!user || !db) return;
+      await deleteDoc(doc(db, "users", user.uid, "tasks", id));
     },
-    [useCloud, user],
+    [user],
   );
 
   return { tasks, ready, addTask, updateTask, removeTask };

@@ -7,7 +7,6 @@ Tablero Kanban minimalista organizado **por proyectos**: cada proyecto tiene su 
 - React 19 + TypeScript + Vite
 - Tailwind CSS v4 + Framer Motion (animaciones) + dnd-kit (drag & drop)
 - Firebase: Authentication (Google) + Firestore en tiempo real
-- Modo demo sin configuración: sesión de invitado con datos en localStorage
 
 ## Arrancar
 
@@ -16,7 +15,7 @@ npm install
 npm run dev
 ```
 
-Sin configurar nada la app funciona en **modo demo** (botón "Entrar como invitado", datos guardados en tu navegador).
+Necesitas tener Firebase configurado (ver abajo) antes de poder iniciar sesión: la app requiere una cuenta de Google real y Firestore, no tiene modo sin conexión.
 
 ## Activar Google + Firestore
 

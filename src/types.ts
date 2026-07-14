@@ -36,7 +36,6 @@ export interface AppUser {
   name: string;
   email: string | null;
   photoURL: string | null;
-  isDemo: boolean;
 }
 
 export const STATUS_META: Record<
