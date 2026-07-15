@@ -35,7 +35,7 @@ export default function ProjectTabs({ projects, selectedId, onSelect, onCreate, 
   }
 
   return (
-    <nav className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-4 pb-1 pt-6 sm:px-8">
+    <nav className="mx-auto flex min-w-0 max-w-7xl items-center gap-2 overflow-x-auto px-4 pb-1 pt-6 sm:px-8">
       {projects.map((p) => {
         const active = p.id === selectedId;
         const confirming = confirmId === p.id;
