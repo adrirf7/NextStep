@@ -47,7 +47,7 @@ export default function Login() {
   useEffect(() => {
     if (redirectError === "auth/redirect-storage-blocked") {
       setError(
-        "Tu navegador está bloqueando el acceso a almacenamiento de terceros, lo que impide completar el inicio de sesión con Google. Permite las ventanas emergentes para este sitio (icono en la barra de direcciones) y desactiva el bloqueo de cookies de terceros para este sitio, luego vuelve a intentarlo.",
+        "No se pudo completar el inicio de sesión. Suele deberse a un bloqueador de anuncios o extensión de privacidad (uBlock, AdBlock, Privacy Badger...) que bloquea las ventanas emergentes o las cookies de terceros hacia Google. Desactiva la extensión para este sitio y vuelve a intentarlo.",
       );
     } else if (redirectError) {
       setError(`No se pudo completar el inicio de sesión (${redirectError}).`);
