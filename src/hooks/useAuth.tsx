@@ -26,6 +26,7 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const REDIRECT_PENDING_KEY = "nextstep.redirectPending";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -39,9 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     // Completa el login si venimos de vuelta de una redirección a Google
     // (respaldo cuando el navegador bloquea el popup).
+    const wasRedirecting = sessionStorage.getItem(REDIRECT_PENDING_KEY) === "1";
+    sessionStorage.removeItem(REDIRECT_PENDING_KEY);
     getRedirectResult(auth)
       .then((result) => {
-        console.log("Resultado de la redirección de Google:", result);
+        if (!result && wasRedirecting) {
+          // Volvimos de la redirección a Google pero Firebase no encontró
+          // sesión que completar: el navegador está bloqueando el
+          // almacenamiento de terceros que Firebase necesita para esto.
+          setRedirectError("auth/redirect-storage-blocked");
+        }
       })
       .catch((e) => {
         console.error("Error al completar el login por redirección:", e);
@@ -74,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Si el navegador bloquea el popup (frecuente en algunos dominios/
       // navegadores en producción), recurrimos a redirección de página completa.
       if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
+        sessionStorage.setItem(REDIRECT_PENDING_KEY, "1");
         await signInWithRedirect(auth, googleProvider);
         return;
       }

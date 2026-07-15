@@ -45,7 +45,11 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (redirectError) {
+    if (redirectError === "auth/redirect-storage-blocked") {
+      setError(
+        "Tu navegador está bloqueando el acceso a almacenamiento de terceros, lo que impide completar el inicio de sesión con Google. Permite las ventanas emergentes para este sitio (icono en la barra de direcciones) y desactiva el bloqueo de cookies de terceros para este sitio, luego vuelve a intentarlo.",
+      );
+    } else if (redirectError) {
       setError(`No se pudo completar el inicio de sesión (${redirectError}).`);
     }
   }, [redirectError]);
