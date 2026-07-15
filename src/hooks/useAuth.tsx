@@ -7,7 +7,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { onAuthStateChanged, signInWithPopup, signOut as fbSignOut } from "firebase/auth";
+import {
+  getRedirectResult,
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithRedirect,
+  signOut as fbSignOut,
+} from "firebase/auth";
 import { auth, firebaseEnabled, googleProvider } from "../firebase";
 import type { AppUser } from "../types";
 
@@ -29,6 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
+    // Completa el login si venimos de vuelta de una redirección a Google
+    // (respaldo cuando el navegador bloquea el popup).
+    getRedirectResult(auth).catch((e) => {
+      console.error("Error al completar el login por redirección:", e);
+    });
     const unsub = onAuthStateChanged(auth, (fbUser) => {
       setUser(
         fbUser
@@ -49,7 +60,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!firebaseEnabled || !auth) {
       throw new Error("firebase-disabled");
     }
-    await signInWithPopup(auth, googleProvider);
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (e) {
+      const code = (e as { code?: string }).code;
+      // Si el navegador bloquea el popup (frecuente en algunos dominios/
+      // navegadores en producción), recurrimos a redirección de página completa.
+      if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
+        await signInWithRedirect(auth, googleProvider);
+        return;
+      }
+      throw e;
+    }
   }, []);
 
   const signOut = useCallback(async () => {
