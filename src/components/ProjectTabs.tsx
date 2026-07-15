@@ -35,7 +35,7 @@ export default function ProjectTabs({ projects, selectedId, onSelect, onCreate, 
   }
 
   return (
-    <nav className="mx-auto flex min-w-0 max-w-7xl items-center gap-2 overflow-x-auto px-4 pb-1 pt-6 sm:px-8">
+    <nav className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 pb-1 pt-6 sm:px-8">
       {projects.map((p) => {
         const active = p.id === selectedId;
         const confirming = confirmId === p.id;
@@ -63,13 +63,15 @@ export default function ProjectTabs({ projects, selectedId, onSelect, onCreate, 
                 handleDeleteClick(p.id);
               }}
               aria-label={`Eliminar proyecto ${p.name}`}
-              className={`ml-0.5 grid h-4 w-4 place-items-center rounded-full transition-all ${
+              className={`ml-0.5 grid h-5 w-5 place-items-center rounded-full opacity-60 transition-all min-[1000px]:opacity-0 min-[1000px]:group-hover:opacity-100 ${
                 confirming
                   ? "bg-red-500 text-white opacity-100"
-                  : `opacity-0 group-hover:opacity-100 ${active ? "hover:bg-paper/20" : "hover:bg-red-500/10 hover:text-red-500"}`
+                  : active
+                    ? "hover:bg-paper/20"
+                    : "hover:bg-red-500/10 hover:text-red-500"
               }`}
             >
-              <Trash2 className="h-2.5 w-2.5" />
+              <Trash2 className="h-3 w-3" />
             </span>
           </motion.button>
         );
@@ -99,7 +101,7 @@ export default function ProjectTabs({ projects, selectedId, onSelect, onCreate, 
                 }
               }}
               placeholder="Nombre del proyecto…"
-              className="w-44 rounded-full border border-ink bg-surface px-3.5 py-1.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-lime/60 dark:border-paper dark:bg-night-raised"
+              className="w-44 max-w-[60vw] rounded-full border border-ink bg-surface px-3.5 py-1.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-lime/60 dark:border-paper dark:bg-night-raised"
             />
             <button
               type="submit"
