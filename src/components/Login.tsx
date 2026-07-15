@@ -55,8 +55,9 @@ export default function Login() {
       await signInWithGoogle();
     } catch (e) {
       const code = (e as { code?: string }).code ?? "";
+      console.error("Error al iniciar sesión con Google:", e);
       if (code !== "auth/popup-closed-by-user" && code !== "auth/cancelled-popup-request") {
-        setError("No se pudo iniciar sesión con Google. Inténtalo de nuevo.");
+        setError(`No se pudo iniciar sesión con Google (${code || "error desconocido"}).`);
       }
     } finally {
       setBusy(false);

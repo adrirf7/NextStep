@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus } from "lucide-react";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
-import { useTasks, type TaskDraft } from "./hooks/useTasks";
+import { useTasks } from "./hooks/useTasks";
 import { useProjects } from "./hooks/useProjects";
 import { STATUS_ORDER } from "./types";
 import Login from "./components/Login";
@@ -59,156 +59,6 @@ function Shell() {
     await removeProject(id);
   }
 
-  // TEMPORAL: genera proyectos y tareas de ejemplo para hacer capturas.
-  async function seedDemoData() {
-    const now = Date.now();
-    const day = 86400000;
-
-    const webId = await addProject("Rediseño Web");
-    const appId = await addProject("App Móvil Fitly");
-
-    const webTasks: Omit<TaskDraft, "projectId">[] = [
-      {
-        title: "Definir paleta de colores",
-        description: "Elegir la paleta final basada en el moodboard del cliente.",
-        status: "done",
-        priority: "low",
-        dueDate: null,
-      },
-      {
-        title: "Wireframes de la home",
-        description: "Estructura de bloques para escritorio y móvil.",
-        status: "done",
-        priority: "medium",
-        dueDate: null,
-      },
-      {
-        title: "Maquetar página de precios",
-        description: "Adaptar el diseño de Figma a componentes React.",
-        status: "doing",
-        priority: "high",
-        dueDate: now + 3 * day,
-      },
-      {
-        title: "Revisar accesibilidad del formulario de contacto",
-        description: "Comprobar contraste, foco visible y etiquetas ARIA.",
-        status: "doing",
-        priority: "medium",
-        dueDate: null,
-      },
-      {
-        title: "Optimizar imágenes para producción",
-        description: "Convertir a WebP y comprimir los assets más pesados.",
-        status: "todo",
-        priority: "low",
-        dueDate: null,
-      },
-      {
-        title: "Escribir copy de la sección FAQ",
-        description: "Redactar 8 preguntas frecuentes junto al equipo de soporte.",
-        status: "todo",
-        priority: "medium",
-        dueDate: now + 7 * day,
-      },
-    ];
-
-    const appTasks: Omit<TaskDraft, "projectId">[] = [
-      {
-        title: "Configurar CI/CD",
-        description: "Pipeline de build y despliegue automático en cada PR.",
-        status: "done",
-        priority: "high",
-        dueDate: null,
-      },
-      {
-        title: "Diseñar onboarding",
-        description: "Tres pantallas de bienvenida con animaciones.",
-        status: "done",
-        priority: "medium",
-        dueDate: null,
-      },
-      {
-        title: "Integrar notificaciones push",
-        description: "Configurar Firebase Cloud Messaging para recordatorios.",
-        status: "doing",
-        priority: "high",
-        dueDate: now + 1 * day,
-      },
-      {
-        title: "Testear login con Apple",
-        description: "Verificar el flujo completo en un dispositivo físico.",
-        status: "doing",
-        priority: "low",
-        dueDate: null,
-      },
-      {
-        title: "Publicar beta en TestFlight",
-        description: "Subir el build 1.0.0-beta y añadir testers internos.",
-        status: "todo",
-        priority: "high",
-        dueDate: now + 5 * day,
-      },
-      {
-        title: "Recoger feedback de usuarios beta",
-        description: "Crear un formulario corto y agendar 5 entrevistas.",
-        status: "todo",
-        priority: "medium",
-        dueDate: null,
-      },
-    ];
-
-    for (const t of webTasks) await addTask({ ...t, projectId: webId });
-    for (const t of appTasks) await addTask({ ...t, projectId: appId });
-
-    setSelectedProjectId(webId);
-  }
-
-  // TEMPORAL: añade tareas extra a proyectos ya existentes (sin duplicar proyectos).
-  async function addExtraDemoTasks() {
-    const web = projects.find((p) => p.name === "Rediseño Web");
-    const app = projects.find((p) => p.name === "App Móvil Fitly");
-    const now = Date.now();
-    const day = 86400000;
-
-    if (web) {
-      const extra: Omit<TaskDraft, "projectId">[] = [
-        {
-          title: "Auditar SEO técnico",
-          description: "Revisar metaetiquetas, sitemap y velocidad de carga.",
-          status: "todo",
-          priority: "medium",
-          dueDate: null,
-        },
-        {
-          title: "Configurar analítica",
-          description: "Instalar Google Analytics 4 y eventos personalizados.",
-          status: "todo",
-          priority: "low",
-          dueDate: null,
-        },
-        {
-          title: "Preparar entorno de staging",
-          description: "Desplegar una rama de pruebas antes de producción.",
-          status: "doing",
-          priority: "high",
-          dueDate: now + 2 * day,
-        },
-      ];
-      for (const t of extra) await addTask({ ...t, projectId: web.id });
-    }
-
-    if (app) {
-      await addTask({
-        title: "Revisar rendimiento con Flipper",
-        description: "Detectar renders innecesarios en las pantallas principales.",
-        status: "todo",
-        priority: "low",
-        dueDate: null,
-        projectId: app.id,
-      });
-    }
-  }
-
   if (loading) {
     return (
       <div className="grid min-h-screen place-items-center">
@@ -241,25 +91,6 @@ function Shell() {
           className="grain flex min-h-screen flex-col"
         >
           <Header dark={dark} onToggleDark={() => setDark((d) => !d)} />
-
-          {import.meta.env.DEV && (
-            <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
-              <button
-                onClick={() => void addExtraDemoTasks()}
-                className="flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow-lift"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Añadir tareas extra (temporal)
-              </button>
-              <button
-                onClick={() => void seedDemoData()}
-                className="flex items-center gap-1.5 rounded-full bg-red-500 px-4 py-2 text-xs font-bold text-white shadow-lift"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Sembrar datos de ejemplo (temporal)
-              </button>
-            </div>
-          )}
 
           {!projectsReady ? (
             <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 pt-10 sm:px-8 min-[1000px]:grid-cols-3">
