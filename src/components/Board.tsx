@@ -242,12 +242,15 @@ export default function Board({
             <div className="relative min-w-0 flex-1 sm:w-56 sm:flex-none">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
               <input
-                type="search"
+                type="text"
+                inputMode="search"
                 name="task-search"
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck={false}
+                data-lpignore="true"
+                data-1p-ignore=""
                 value={search}
                 onChange={(e) => onSearch(e.target.value)}
                 placeholder="Buscar tareas…"
