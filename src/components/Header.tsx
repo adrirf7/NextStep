@@ -18,15 +18,18 @@ export default function Header({ dark, onToggleDark }: Props) {
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className="sticky top-0 z-40 border-b border-line bg-paper/80 backdrop-blur-xl dark:border-night-line dark:bg-night/80"
     >
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-8">
-        <div className="flex shrink-0 items-center gap-2.5">
+      <div className="mx-auto flex max-w-7xl items-center justify-center gap-3 px-4 py-3 sm:px-8">
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="shrink-0"
+          aria-label="Ir arriba"
+        >
           <Logo className="h-8 w-8 rounded-lg" />
-          <span className="hidden text-base font-extrabold tracking-tight sm:block">
-            NextStep
-          </span>
-        </div>
+        </motion.button>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 border-l border-line pl-3 dark:border-night-line">
           <motion.button
             whileHover={{ rotate: 20, scale: 1.08 }}
             whileTap={{ scale: 0.9 }}

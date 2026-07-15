@@ -93,7 +93,7 @@ function Shell() {
           <Header dark={dark} onToggleDark={() => setDark((d) => !d)} />
 
           {!projectsReady ? (
-            <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 pt-10 sm:px-8 md:grid-cols-3">
+            <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 pt-10 sm:px-8 min-[1000px]:grid-cols-3">
               {STATUS_ORDER.map((s) => (
                 <div
                   key={s}

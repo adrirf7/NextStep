@@ -90,7 +90,7 @@ export default function Login() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-5 flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-ink-soft dark:border-night-line dark:bg-night-raised dark:text-ink-faint"
+          className="mb-5 flex items-center gap-2 rounded-full border border-ink/10 bg-surface px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-ink-soft shadow-card dark:border-night-line dark:bg-night-raised dark:text-ink-faint dark:shadow-none"
         >
           <CircleDashed className="h-3.5 w-3.5 text-lime-deep" />
           El flujo de tus proyectos

@@ -24,6 +24,7 @@ interface Props {
   index: number;
   maxHeight: number;
   onMeasure: (status: TaskStatus, height: number) => void;
+  onMeasurePosition: (status: TaskStatus, centerX: number) => void;
   onView: (task: Task) => void;
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
@@ -36,6 +37,7 @@ export default function Column({
   index,
   maxHeight,
   onMeasure,
+  onMeasurePosition,
   onView,
   onEdit,
   onDelete,
@@ -44,8 +46,14 @@ export default function Column({
   // El droppable cubre TODA la columna (toda la celda del grid), no solo
   // la caja visible, para poder soltar aunque estés por debajo de ella.
   const { setNodeRef, isOver } = useDroppable({ id: status });
+  const sectionRef = useRef<HTMLElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const Icon = STATUS_ICON[status];
+
+  function setSectionRefs(node: HTMLElement | null) {
+    setNodeRef(node);
+    sectionRef.current = node;
+  }
 
   // Mide el tamaño natural (sin expandir) de la caja visible para que el
   // resto pueda crecer hasta igualar a la más alta.
@@ -59,9 +67,23 @@ export default function Column({
     return () => ro.disconnect();
   }, [status, onMeasure, isOver]);
 
+  // Posición horizontal de la columna, para poder colocar el aviso de
+  // "sobre qué columna estás" justo encima de la columna correspondiente.
+  useEffect(() => {
+    function measure() {
+      const el = sectionRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      onMeasurePosition(status, rect.left + rect.width / 2);
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [status, onMeasurePosition]);
+
   return (
     <motion.section
-      ref={setNodeRef}
+      ref={setSectionRefs}
       initial={{ opacity: 0, y: 28 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.15 + index * 0.12, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}

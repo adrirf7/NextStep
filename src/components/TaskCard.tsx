@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useDraggable } from "@dnd-kit/core";
-import { CalendarClock, Flag, Pencil, Trash2 } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight, Flag, Pencil, Trash2 } from "lucide-react";
 import type { Task } from "../types";
 import { PRIORITY_META } from "../types";
 
@@ -23,12 +23,27 @@ interface Props {
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
   overlay?: boolean;
+  /** En móvil: sin drag (scroll táctil libre), acciones siempre visibles
+      y botones ← → para mover la tarea entre estados. */
+  mobile?: boolean;
+  onMoveBack?: () => void;
+  onMoveForward?: () => void;
 }
 
-export default function TaskCard({ task, onView, onEdit, onDelete, overlay = false }: Props) {
+export default function TaskCard({
+  task,
+  onView,
+  onEdit,
+  onDelete,
+  overlay = false,
+  mobile = false,
+  onMoveBack,
+  onMoveForward,
+}: Props) {
+  const dragEnabled = !overlay && !mobile;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: task.id,
-    disabled: overlay,
+    disabled: !dragEnabled,
   });
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -49,8 +64,8 @@ export default function TaskCard({ task, onView, onEdit, onDelete, overlay = fal
   return (
     <motion.article
       ref={setNodeRef}
-      {...listeners}
-      {...attributes}
+      {...(dragEnabled ? listeners : {})}
+      {...(dragEnabled ? attributes : {})}
       layout={!overlay}
       initial={overlay ? false : { opacity: 0, y: 16, scale: 0.96 }}
       animate={{ opacity: isDragging ? 0.35 : 1, y: 0, scale: 1 }}
@@ -58,19 +73,23 @@ export default function TaskCard({ task, onView, onEdit, onDelete, overlay = fal
       transition={{ type: "spring", stiffness: 380, damping: 30 }}
       whileHover={overlay ? undefined : { y: -3 }}
       onClick={() => !overlay && onView?.(task)}
-      className={`group relative touch-none rounded-2xl border border-line bg-surface p-4 shadow-card transition-shadow hover:shadow-lift dark:border-night-line dark:bg-night-raised ${
+      className={`group relative rounded-2xl border border-line bg-surface p-4 shadow-card transition-shadow hover:shadow-lift dark:border-night-line dark:bg-night-raised ${
+        dragEnabled ? "touch-none" : ""
+      } ${
         overlay ? "rotate-2 shadow-lift ring-2 ring-lime" : "cursor-pointer"
       } ${task.status === "done" ? "opacity-75" : ""}`}
     >
       <div className="flex items-start gap-2">
-        <div
-          aria-hidden
-          className="mt-1.5 grid shrink-0 grid-cols-2 gap-[3px] self-start opacity-25 transition-opacity group-hover:opacity-60"
-        >
-          {Array.from({ length: 6 }).map((_, i) => (
-            <span key={i} className="h-[3px] w-[3px] rounded-full bg-ink-faint" />
-          ))}
-        </div>
+        {!mobile && (
+          <div
+            aria-hidden
+            className="mt-1.5 grid shrink-0 grid-cols-2 gap-[3px] self-start opacity-25 transition-opacity group-hover:opacity-60"
+          >
+            {Array.from({ length: 6 }).map((_, i) => (
+              <span key={i} className="h-[3px] w-[3px] rounded-full bg-ink-faint" />
+            ))}
+          </div>
+        )}
 
         <div className="min-w-0 flex-1">
           <h3
@@ -89,7 +108,7 @@ export default function TaskCard({ task, onView, onEdit, onDelete, overlay = fal
 
         <div
           className={`flex shrink-0 gap-0.5 transition-opacity ${
-            confirmingDelete ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+            confirmingDelete || mobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
           }`}
         >
           <button
@@ -149,6 +168,33 @@ export default function TaskCard({ task, onView, onEdit, onDelete, overlay = fal
             month: "short",
           })}
         </span>
+
+        {mobile && (
+          <span className="flex gap-1.5">
+            <button
+              disabled={!onMoveBack}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveBack?.();
+              }}
+              aria-label="Mover al estado anterior"
+              className="grid h-8 w-8 place-items-center rounded-full bg-paper-deep text-ink-soft transition-colors active:bg-line disabled:opacity-25 dark:bg-night-line dark:text-ink-faint"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              disabled={!onMoveForward}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveForward?.();
+              }}
+              aria-label="Mover al siguiente estado"
+              className="grid h-8 w-8 place-items-center rounded-full bg-ink text-paper transition-colors disabled:opacity-25 dark:bg-lime dark:text-ink"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </span>
+        )}
       </div>
     </motion.article>
   );

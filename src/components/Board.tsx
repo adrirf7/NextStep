@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -6,13 +6,15 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { motion } from "framer-motion";
-import { Plus, Search } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Circle, CircleCheck, CircleDot, Inbox, Plus, Search } from "lucide-react";
 import type { AppUser, Project, SortOption, Task, TaskStatus } from "../types";
-import { STATUS_ORDER, compareTasks } from "../types";
+import { STATUS_META, STATUS_ORDER, compareTasks } from "../types";
 import type { TaskDraft } from "../hooks/useTasks";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 import Column from "./Column";
 import TaskCard from "./TaskCard";
 import TaskModal from "./TaskModal";
@@ -33,6 +35,24 @@ interface Props {
   onOpenModal: () => void;
   onCloseModal: () => void;
 }
+
+const STATUS_ICON: Record<TaskStatus, typeof Circle> = {
+  todo: Circle,
+  doing: CircleDot,
+  done: CircleCheck,
+};
+
+// Acentos de color para el aviso flotante: tinta en modo claro, lima en
+// modo oscuro (mismo esquema que el logo/header).
+const STATUS_ACCENT_POPUP: Record<TaskStatus, string> = {
+  todo: "text-paper/70 dark:text-ink/60",
+  doing: "text-amber-flow dark:text-amber-700",
+  done: "text-lime dark:text-green-700",
+};
+
+// Altura aproximada de la cabecera fija de la app (sticky top-0), para saber
+// cuándo las cabeceras de columna quedan tapadas/fuera de la pantalla al hacer scroll.
+const STICKY_HEADER_HEIGHT = 72;
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -66,6 +86,34 @@ export default function Board({
     doing: 144,
     done: 144,
   });
+  const [columnPositions, setColumnPositions] = useState<Record<TaskStatus, number>>({
+    todo: 0,
+    doing: 0,
+    done: 0,
+  });
+  const [hoveredStatus, setHoveredStatus] = useState<TaskStatus | null>(null);
+  const [headersVisible, setHeadersVisible] = useState(true);
+  const [mobileStatus, setMobileStatus] = useState<TaskStatus>("todo");
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  // En móvil el drag & drop no funciona bien (columnas apiladas + el gesto
+  // de arrastre pelea con el scroll táctil), así que cambiamos a una vista
+  // de una columna con pestañas y botones ← → para mover tareas.
+  const isMobile = useMediaQuery("(max-width: 999px)");
+
+  // Mientras arrastras, si haces scroll lo bastante como para que las
+  // cabeceras de columna ("Sin completar", "En proceso"...) ya no se vean,
+  // mostramos un aviso flotante con el nombre del estado sobre el que estás.
+  useEffect(() => {
+    function onScroll() {
+      const el = gridRef.current;
+      if (!el) return;
+      setHeadersVisible(el.getBoundingClientRect().top > STICKY_HEADER_HEIGHT);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -73,6 +121,12 @@ export default function Board({
 
   const handleMeasureColumn = useCallback((status: TaskStatus, height: number) => {
     setColumnHeights((prev) => (Math.abs(prev[status] - height) < 1 ? prev : { ...prev, [status]: height }));
+  }, []);
+
+  const handleMeasureColumnPosition = useCallback((status: TaskStatus, centerX: number) => {
+    setColumnPositions((prev) =>
+      Math.abs(prev[status] - centerX) < 1 ? prev : { ...prev, [status]: centerX },
+    );
   }, []);
 
   const maxColumnHeight = Math.max(144, ...Object.values(columnHeights));
@@ -104,11 +158,19 @@ export default function Board({
   const progress = projectTasks.length ? Math.round((doneCount / projectTasks.length) * 100) : 0;
 
   function handleDragStart(e: DragStartEvent) {
-    setActiveTask(projectTasks.find((t) => t.id === e.active.id) ?? null);
+    const task = projectTasks.find((t) => t.id === e.active.id) ?? null;
+    setActiveTask(task);
+    setHoveredStatus(task?.status ?? null);
+  }
+
+  function handleDragOver(e: DragOverEvent) {
+    const targetStatus = e.over?.id as TaskStatus | undefined;
+    setHoveredStatus(targetStatus && STATUS_ORDER.includes(targetStatus) ? targetStatus : null);
   }
 
   function handleDragEnd(e: DragEndEvent) {
     setActiveTask(null);
+    setHoveredStatus(null);
     const targetStatus = e.over?.id as TaskStatus | undefined;
     if (!targetStatus || !STATUS_ORDER.includes(targetStatus)) return;
     const task = projectTasks.find((t) => t.id === e.active.id);
@@ -138,6 +200,13 @@ export default function Board({
     setEditing(null);
     setInitialStatus(status);
     onOpenModal();
+  }
+
+  // Mueve una tarea al estado anterior/siguiente del flujo (botones ← → en móvil).
+  function moveTask(task: Task, direction: -1 | 1) {
+    const idx = STATUS_ORDER.indexOf(task.status);
+    const next = STATUS_ORDER[idx + direction];
+    if (next) void updateTask(task.id, { status: next });
   }
 
   const firstName = user.name.split(" ")[0];
@@ -183,7 +252,7 @@ export default function Board({
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
-              onClick={() => openNew("todo")}
+              onClick={() => openNew(isMobile ? mobileStatus : "todo")}
               className="flex shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-bold text-paper shadow-card hover:bg-black dark:bg-lime dark:text-ink dark:hover:bg-lime-deep"
             >
               <Plus className="h-4 w-4" />
@@ -220,7 +289,7 @@ export default function Board({
       </motion.div>
 
       {!tasksReady ? (
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 min-[1000px]:grid-cols-3">
           {STATUS_ORDER.map((s) => (
             <div
               key={s}
@@ -228,9 +297,78 @@ export default function Board({
             />
           ))}
         </div>
+      ) : isMobile ? (
+        <div>
+          {/* Pestañas de estado: una columna visible a la vez */}
+          <div className="mb-4 flex gap-1 rounded-2xl bg-paper-deep/70 p-1 dark:bg-night-raised">
+            {STATUS_ORDER.map((s) => {
+              const Icon = STATUS_ICON[s];
+              const active = mobileStatus === s;
+              return (
+                <button
+                  key={s}
+                  onClick={() => setMobileStatus(s)}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-xs font-bold transition-all ${
+                    active
+                      ? "bg-ink text-paper shadow-card dark:bg-lime dark:text-ink"
+                      : "text-ink-soft dark:text-ink-faint"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {STATUS_META[s].hint}
+                  <span
+                    className={`rounded-full px-1.5 font-mono text-[10px] ${
+                      active ? "bg-paper/20 dark:bg-ink/10" : "bg-paper-deep dark:bg-night-line"
+                    }`}
+                  >
+                    {byStatus[s].length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <AnimatePresence mode="popLayout">
+              {byStatus[mobileStatus].map((task) => {
+                const idx = STATUS_ORDER.indexOf(mobileStatus);
+                return (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    mobile
+                    onView={openView}
+                    onEdit={openEdit}
+                    onDelete={(id) => void removeTask(id)}
+                    onMoveBack={idx > 0 ? () => moveTask(task, -1) : undefined}
+                    onMoveForward={
+                      idx < STATUS_ORDER.length - 1 ? () => moveTask(task, 1) : undefined
+                    }
+                  />
+                );
+              })}
+            </AnimatePresence>
+
+            {byStatus[mobileStatus].length === 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex h-36 flex-col items-center justify-center gap-1.5 rounded-3xl bg-paper-deep/50 text-ink-faint dark:bg-night-raised/40"
+              >
+                <Inbox className="h-5 w-5 opacity-50" />
+                <p className="text-xs font-medium">Sin tareas todavía</p>
+              </motion.div>
+            )}
+          </div>
+        </div>
       ) : (
-        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="grid items-stretch gap-5 md:grid-cols-3">
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+        >
+          <div ref={gridRef} className="grid grid-cols-3 items-stretch gap-5">
             {STATUS_ORDER.map((status, i) => (
               <Column
                 key={status}
@@ -239,6 +377,7 @@ export default function Board({
                 tasks={byStatus[status]}
                 maxHeight={maxColumnHeight}
                 onMeasure={handleMeasureColumn}
+                onMeasurePosition={handleMeasureColumnPosition}
                 onView={openView}
                 onEdit={openEdit}
                 onDelete={(id) => void removeTask(id)}
@@ -253,6 +392,25 @@ export default function Board({
           </DragOverlay>
         </DndContext>
       )}
+
+      <AnimatePresence>
+        {activeTask && !headersVisible && hoveredStatus && (
+          <motion.div
+            initial={{ opacity: 0, y: -12, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 32 }}
+            style={{ left: columnPositions[hoveredStatus] }}
+            className="pointer-events-none fixed top-20 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-bold text-paper shadow-lift ring-1 ring-black/10 transition-[left] duration-300 ease-out dark:bg-lime dark:text-ink"
+          >
+            {(() => {
+              const Icon = STATUS_ICON[hoveredStatus];
+              return <Icon className={`h-4 w-4 ${STATUS_ACCENT_POPUP[hoveredStatus]}`} />;
+            })()}
+            {STATUS_META[hoveredStatus].label}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <TaskModal
         open={modalOpen}
