@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CircleDashed, Loader2 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
@@ -40,9 +40,15 @@ function GoogleIcon() {
 }
 
 export default function Login() {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, redirectError } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (redirectError) {
+      setError(`No se pudo completar el inicio de sesión (${redirectError}).`);
+    }
+  }, [redirectError]);
 
   async function handleGoogle() {
     if (!firebaseEnabled) {

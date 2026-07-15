@@ -20,6 +20,7 @@ import type { AppUser } from "../types";
 interface AuthContextValue {
   user: AppUser | null;
   loading: boolean;
+  redirectError: string | null;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -29,6 +30,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [redirectError, setRedirectError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!firebaseEnabled || !auth) {
@@ -37,9 +39,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     // Completa el login si venimos de vuelta de una redirección a Google
     // (respaldo cuando el navegador bloquea el popup).
-    getRedirectResult(auth).catch((e) => {
-      console.error("Error al completar el login por redirección:", e);
-    });
+    getRedirectResult(auth)
+      .then((result) => {
+        console.log("Resultado de la redirección de Google:", result);
+      })
+      .catch((e) => {
+        console.error("Error al completar el login por redirección:", e);
+        setRedirectError((e as { code?: string }).code ?? "auth/redirect-error");
+      });
     const unsub = onAuthStateChanged(auth, (fbUser) => {
       setUser(
         fbUser
@@ -80,8 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, signInWithGoogle, signOut }),
-    [user, loading, signInWithGoogle, signOut],
+    () => ({ user, loading, redirectError, signInWithGoogle, signOut }),
+    [user, loading, redirectError, signInWithGoogle, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
