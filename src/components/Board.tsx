@@ -321,16 +321,18 @@ export default function Board({
                 <button
                   key={s}
                   onClick={() => setMobileStatus(s)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-xs font-bold transition-all ${
+                  className={`flex flex-1 items-center justify-center gap-1 rounded-xl px-1 py-2.5 text-xs font-bold transition-all ${
                     active
                       ? "bg-ink text-paper shadow-card dark:bg-lime dark:text-ink"
                       : "text-ink-soft dark:text-ink-faint"
                   }`}
                 >
-                  <Icon className="h-3.5 w-3.5" />
-                  {STATUS_META[s].hint}
+                  <Icon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="hidden truncate min-[480px]:inline">
+                    {STATUS_META[s].hint}
+                  </span>
                   <span
-                    className={`rounded-full px-1.5 font-mono text-[10px] ${
+                    className={`shrink-0 rounded-full px-1.5 font-mono text-[10px] ${
                       active ? "bg-paper/20 dark:bg-ink/10" : "bg-paper-deep dark:bg-night-line"
                     }`}
                   >
@@ -339,6 +341,16 @@ export default function Board({
                 </button>
               );
             })}
+          </div>
+
+          <div className="mb-3 flex items-center gap-1.5 px-1 min-[480px]:hidden">
+            {(() => {
+              const Icon = STATUS_ICON[mobileStatus];
+              return <Icon className="h-4 w-4 text-ink-faint" />;
+            })()}
+            <h2 className="font-display text-lg tracking-tight">
+              {STATUS_META[mobileStatus].label}
+            </h2>
           </div>
 
           <div className="flex flex-col gap-3">

@@ -28,7 +28,13 @@ function Shell() {
   );
 
   const { tasks, ready: tasksReady, addTask, updateTask, removeTask } = useTasks(user);
-  const { projects, ready: projectsReady, addProject, removeProject } = useProjects(user);
+  const {
+    projects,
+    ready: projectsReady,
+    addProject,
+    renameProject,
+    removeProject,
+  } = useProjects(user);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -110,6 +116,7 @@ function Shell() {
                 selectedId={selectedProjectId}
                 onSelect={setSelectedProjectId}
                 onCreate={handleCreateProject}
+                onRename={renameProject}
                 onDelete={handleDeleteProject}
               />
               {selectedProject && (

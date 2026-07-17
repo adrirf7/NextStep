@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { addDoc, collection, deleteDoc, doc, onSnapshot, query } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, onSnapshot, query, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import type { AppUser, Project } from "../types";
 import { PROJECT_COLORS } from "../types";
@@ -52,6 +52,14 @@ export function useProjects(user: AppUser | null) {
     [user, projects.length],
   );
 
+  const renameProject = useCallback(
+    async (id: string, name: string) => {
+      if (!user || !db) return;
+      await updateDoc(doc(db, "users", user.uid, "projects", id), { name });
+    },
+    [user],
+  );
+
   const removeProject = useCallback(
     async (id: string) => {
       if (!user || !db) return;
@@ -60,5 +68,5 @@ export function useProjects(user: AppUser | null) {
     [user],
   );
 
-  return { projects, ready, addProject, removeProject };
+  return { projects, ready, addProject, renameProject, removeProject };
 }
