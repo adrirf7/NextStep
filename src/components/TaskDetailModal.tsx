@@ -1,21 +1,37 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Calendar, CalendarClock, Check, Flag, Pencil, Trash2, X } from "lucide-react";
-import type { Task, TaskPriority } from "../types";
-import { PRIORITY_META, STATUS_META } from "../types";
+import {
+  ArrowDown,
+  ArrowUp,
+  Calendar,
+  CalendarClock,
+  Check,
+  Equal,
+  Flame,
+  Minus,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
+import type { Task, TaskPriority, TaskStatus } from "../types";
+import { PRIORITY_META, STATUS_META, STATUS_ORDER } from "../types";
 
-const PRIORITIES: TaskPriority[] = ["low", "medium", "high"];
+const PRIORITIES: TaskPriority[] = ["trivial", "low", "medium", "high", "urgent"];
 
 const PRIORITY_STYLES: Record<Task["priority"], string> = {
+  trivial: "bg-paper-deep text-ink-faint dark:bg-night-line dark:text-ink-faint/70",
   low: "bg-paper-deep text-ink-soft dark:bg-night-line dark:text-ink-faint",
   medium: "bg-amber-flow/15 text-amber-700 dark:text-amber-flow",
   high: "bg-red-500/10 text-red-600 dark:text-red-400",
+  urgent: "bg-red-600 text-white",
 };
 
-const PRIORITY_DOT: Record<Task["priority"], string> = {
-  low: "bg-ink-faint",
-  medium: "bg-amber-flow",
-  high: "bg-red-500",
+const PRIORITY_ICON: Record<Task["priority"], typeof Minus> = {
+  trivial: Minus,
+  low: ArrowDown,
+  medium: Equal,
+  high: ArrowUp,
+  urgent: Flame,
 };
 
 function startOfToday(): number {
@@ -27,6 +43,7 @@ function startOfToday(): number {
 const STATUS_DOT: Record<Task["status"], string> = {
   todo: "bg-ink-faint",
   doing: "bg-amber-flow",
+  review: "bg-blue-500",
   done: "bg-green-done",
 };
 
@@ -38,6 +55,7 @@ interface Props {
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
   onPriorityChange: (id: string, priority: TaskPriority) => void;
+  onStatusChange: (id: string, status: TaskStatus) => void;
 }
 
 export default function TaskDetailModal({
@@ -48,10 +66,13 @@ export default function TaskDetailModal({
   onEdit,
   onDelete,
   onPriorityChange,
+  onStatusChange,
 }: Props) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [priorityMenuOpen, setPriorityMenuOpen] = useState(false);
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const priorityMenuRef = useRef<HTMLDivElement>(null);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
   const isOverdue =
     task != null &&
     task.dueDate != null &&
@@ -61,6 +82,7 @@ export default function TaskDetailModal({
   useEffect(() => {
     setConfirmingDelete(false);
     setPriorityMenuOpen(false);
+    setStatusMenuOpen(false);
   }, [task]);
 
   useEffect(() => {
@@ -68,10 +90,13 @@ export default function TaskDetailModal({
       if (priorityMenuRef.current && !priorityMenuRef.current.contains(e.target as Node)) {
         setPriorityMenuOpen(false);
       }
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
+        setStatusMenuOpen(false);
+      }
     }
-    if (priorityMenuOpen) document.addEventListener("mousedown", onClickOutside);
+    if (priorityMenuOpen || statusMenuOpen) document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [priorityMenuOpen]);
+  }, [priorityMenuOpen, statusMenuOpen]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -136,10 +161,51 @@ export default function TaskDetailModal({
             )}
 
             <div className="mt-5 flex flex-wrap items-center gap-1.5">
-              <span className="flex items-center gap-1.5 rounded-full bg-paper-deep px-2.5 py-1 text-[11px] font-bold text-ink-soft dark:bg-night-line dark:text-ink-faint">
-                <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[task.status]}`} />
-                {STATUS_META[task.status].label}
-              </span>
+              <div ref={statusMenuRef} className="relative">
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => setStatusMenuOpen((o) => !o)}
+                  className={`flex items-center gap-1.5 rounded-full bg-paper-deep px-2.5 py-1 text-[11px] font-bold text-ink-soft transition-all dark:bg-night-line dark:text-ink-faint ${
+                    statusMenuOpen ? "ring-2 ring-lime/60" : ""
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[task.status]}`} />
+                  {STATUS_META[task.status].label}
+                </motion.button>
+
+                <AnimatePresence>
+                  {statusMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute left-0 top-full z-20 mt-2 w-44 overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-lift dark:border-night-line dark:bg-night-raised"
+                    >
+                      {STATUS_ORDER.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => {
+                            onStatusChange(task.id, s);
+                            setStatusMenuOpen(false);
+                          }}
+                          className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                            task.status === s
+                              ? "bg-paper-deep text-ink dark:bg-night-line dark:text-paper"
+                              : "text-ink-soft hover:bg-paper-deep hover:text-ink dark:text-ink-faint dark:hover:bg-night-line dark:hover:text-paper"
+                          }`}
+                        >
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[s]}`} />
+                          <span className="flex-1">{STATUS_META[s].label}</span>
+                          {task.status === s && <Check className="h-3.5 w-3.5 shrink-0" />}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
               <div ref={priorityMenuRef} className="relative">
                 <motion.button
                   type="button"
@@ -149,7 +215,10 @@ export default function TaskDetailModal({
                     priorityMenuOpen ? "ring-2 ring-lime/60" : ""
                   }`}
                 >
-                  <Flag className="h-3 w-3" />
+                  {(() => {
+                    const PriorityIcon = PRIORITY_ICON[task.priority];
+                    return <PriorityIcon className="h-3 w-3" />;
+                  })()}
                   {PRIORITY_META[task.priority].label}
                 </motion.button>
 
@@ -160,27 +229,32 @@ export default function TaskDetailModal({
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -8, scale: 0.96 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute left-0 top-full z-20 mt-2 w-40 overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-lift dark:border-night-line dark:bg-night-raised"
+                      className="absolute left-0 top-full z-20 mt-2 w-44 overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-lift dark:border-night-line dark:bg-night-raised"
                     >
-                      {PRIORITIES.map((p) => (
-                        <button
-                          key={p}
-                          type="button"
-                          onClick={() => {
-                            onPriorityChange(task.id, p);
-                            setPriorityMenuOpen(false);
-                          }}
-                          className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold transition-colors ${
-                            task.priority === p
-                              ? "bg-paper-deep text-ink dark:bg-night-line dark:text-paper"
-                              : "text-ink-soft hover:bg-paper-deep hover:text-ink dark:text-ink-faint dark:hover:bg-night-line dark:hover:text-paper"
-                          }`}
-                        >
-                          <span className={`h-2 w-2 shrink-0 rounded-full ${PRIORITY_DOT[p]}`} />
-                          <span className="flex-1">{PRIORITY_META[p].label}</span>
-                          {task.priority === p && <Check className="h-3.5 w-3.5 shrink-0" />}
-                        </button>
-                      ))}
+                      {PRIORITIES.map((p) => {
+                        const PriorityIcon = PRIORITY_ICON[p];
+                        return (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => {
+                              onPriorityChange(task.id, p);
+                              setPriorityMenuOpen(false);
+                            }}
+                            className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                              task.priority === p
+                                ? "bg-paper-deep text-ink dark:bg-night-line dark:text-paper"
+                                : "text-ink-soft hover:bg-paper-deep hover:text-ink dark:text-ink-faint dark:hover:bg-night-line dark:hover:text-paper"
+                            }`}
+                          >
+                            <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full ${PRIORITY_STYLES[p]}`}>
+                              <PriorityIcon className="h-3 w-3" />
+                            </span>
+                            <span className="flex-1">{PRIORITY_META[p].label}</span>
+                            {task.priority === p && <Check className="h-3.5 w-3.5 shrink-0" />}
+                          </button>
+                        );
+                      })}
                     </motion.div>
                   )}
                 </AnimatePresence>

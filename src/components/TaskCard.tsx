@@ -1,14 +1,35 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useDraggable } from "@dnd-kit/core";
-import { CalendarClock, ChevronLeft, ChevronRight, Flag, Pencil, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
+  Equal,
+  Flame,
+  Minus,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import type { Task } from "../types";
 import { PRIORITY_META } from "../types";
 
 const PRIORITY_STYLES: Record<Task["priority"], string> = {
+  trivial: "bg-paper-deep text-ink-faint dark:bg-night-line dark:text-ink-faint/70",
   low: "bg-paper-deep text-ink-soft dark:bg-night-line dark:text-ink-faint",
   medium: "bg-amber-flow/15 text-amber-700 dark:text-amber-flow",
   high: "bg-red-500/10 text-red-600 dark:text-red-400",
+  urgent: "bg-red-600 text-white",
+};
+
+const PRIORITY_ICON: Record<Task["priority"], typeof Minus> = {
+  trivial: Minus,
+  low: ArrowDown,
+  medium: Equal,
+  high: ArrowUp,
+  urgent: Flame,
 };
 
 function startOfToday(): number {
@@ -141,12 +162,17 @@ export default function TaskCard({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        <span
-          className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${PRIORITY_STYLES[task.priority]}`}
-        >
-          <Flag className="h-2.5 w-2.5" />
-          {PRIORITY_META[task.priority].label}
-        </span>
+        {(() => {
+          const PriorityIcon = PRIORITY_ICON[task.priority];
+          return (
+            <span
+              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${PRIORITY_STYLES[task.priority]}`}
+            >
+              <PriorityIcon className="h-2.5 w-2.5" />
+              {PRIORITY_META[task.priority].label}
+            </span>
+          );
+        })()}
         {task.dueDate != null && (
           <span
             className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${

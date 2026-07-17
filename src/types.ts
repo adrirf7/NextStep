@@ -1,5 +1,5 @@
-export type TaskStatus = "todo" | "doing" | "done";
-export type TaskPriority = "low" | "medium" | "high";
+export type TaskStatus = "todo" | "doing" | "review" | "done";
+export type TaskPriority = "trivial" | "low" | "medium" | "high" | "urgent";
 
 export interface Task {
   id: string;
@@ -44,15 +44,18 @@ export const STATUS_META: Record<
 > = {
   todo: { label: "Sin completar", hint: "Por hacer" },
   doing: { label: "En proceso", hint: "En proceso" },
+  review: { label: "En revisión", hint: "En revisión" },
   done: { label: "Finalizadas", hint: "Completado" },
 };
 
-export const STATUS_ORDER: TaskStatus[] = ["todo", "doing", "done"];
+export const STATUS_ORDER: TaskStatus[] = ["todo", "doing", "review", "done"];
 
 export const PRIORITY_META: Record<TaskPriority, { label: string }> = {
+  trivial: { label: "Muy baja" },
   low: { label: "Baja" },
   medium: { label: "Media" },
   high: { label: "Alta" },
+  urgent: { label: "Urgente" },
 };
 
 export type SortOption =
@@ -81,7 +84,13 @@ export const SORT_META: Record<SortOption, { label: string }> = {
   "due-desc": { label: "Fecha límite: lejana primero" },
 };
 
-const PRIORITY_RANK: Record<TaskPriority, number> = { low: 0, medium: 1, high: 2 };
+const PRIORITY_RANK: Record<TaskPriority, number> = {
+  trivial: 0,
+  low: 1,
+  medium: 2,
+  high: 3,
+  urgent: 4,
+};
 
 // Las tareas sin fecha límite siempre quedan al final, sea cual sea la dirección.
 function compareDue(a: Task, b: Task, ascending: boolean): number {

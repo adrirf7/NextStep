@@ -10,7 +10,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { AnimatePresence, motion } from "framer-motion";
-import { Circle, CircleCheck, CircleDot, Inbox, Plus, Search } from "lucide-react";
+import { Circle, CircleCheck, CircleDot, Eye, Inbox, Plus, Search } from "lucide-react";
 import type { AppUser, Project, SortOption, Task, TaskStatus } from "../types";
 import { STATUS_META, STATUS_ORDER, compareTasks } from "../types";
 import type { TaskDraft } from "../hooks/useTasks";
@@ -39,6 +39,7 @@ interface Props {
 const STATUS_ICON: Record<TaskStatus, typeof Circle> = {
   todo: Circle,
   doing: CircleDot,
+  review: Eye,
   done: CircleCheck,
 };
 
@@ -47,6 +48,7 @@ const STATUS_ICON: Record<TaskStatus, typeof Circle> = {
 const STATUS_ACCENT_POPUP: Record<TaskStatus, string> = {
   todo: "text-paper/70 dark:text-ink/60",
   doing: "text-amber-flow dark:text-amber-700",
+  review: "text-blue-400 dark:text-blue-700",
   done: "text-lime dark:text-green-700",
 };
 
@@ -84,11 +86,13 @@ export default function Board({
   const [columnHeights, setColumnHeights] = useState<Record<TaskStatus, number>>({
     todo: 144,
     doing: 144,
+    review: 144,
     done: 144,
   });
   const [columnPositions, setColumnPositions] = useState<Record<TaskStatus, number>>({
     todo: 0,
     doing: 0,
+    review: 0,
     done: 0,
   });
   const [hoveredStatus, setHoveredStatus] = useState<TaskStatus | null>(null);
@@ -146,7 +150,7 @@ export default function Board({
   }, [projectTasks, search]);
 
   const byStatus = useMemo(() => {
-    const map: Record<TaskStatus, Task[]> = { todo: [], doing: [], done: [] };
+    const map: Record<TaskStatus, Task[]> = { todo: [], doing: [], review: [], done: [] };
     for (const t of filtered) map[t.status]?.push(t);
     for (const s of STATUS_ORDER) {
       map[s].sort((a, b) => compareTasks(a, b, sortBy));
@@ -298,7 +302,7 @@ export default function Board({
       </motion.div>
 
       {!tasksReady ? (
-        <div className="grid gap-5 min-[1000px]:grid-cols-3">
+        <div className="grid gap-5 min-[1000px]:grid-cols-4">
           {STATUS_ORDER.map((s) => (
             <div
               key={s}
@@ -377,7 +381,7 @@ export default function Board({
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div ref={gridRef} className="grid grid-cols-3 items-stretch gap-5">
+          <div ref={gridRef} className="grid grid-cols-4 items-stretch gap-5">
             {STATUS_ORDER.map((status, i) => (
               <Column
                 key={status}
@@ -442,6 +446,7 @@ export default function Board({
         onEdit={openEdit}
         onDelete={(id) => void removeTask(id)}
         onPriorityChange={(id, priority) => void updateTask(id, { priority })}
+        onStatusChange={(id, status) => void updateTask(id, { status })}
       />
     </main>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useDroppable } from "@dnd-kit/core";
-import { Circle, CircleCheck, CircleDot, Inbox } from "lucide-react";
+import { Circle, CircleCheck, CircleDot, Eye, Inbox } from "lucide-react";
 import type { Task, TaskStatus } from "../types";
 import { STATUS_META } from "../types";
 import TaskCard from "./TaskCard";
@@ -9,12 +9,14 @@ import TaskCard from "./TaskCard";
 const STATUS_ICON: Record<TaskStatus, typeof Circle> = {
   todo: Circle,
   doing: CircleDot,
+  review: Eye,
   done: CircleCheck,
 };
 
 const STATUS_ACCENT: Record<TaskStatus, string> = {
   todo: "text-ink-faint",
   doing: "text-amber-flow",
+  review: "text-blue-500",
   done: "text-green-done",
 };
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { ArrowDown, ArrowUp, Equal, Flame, Minus, X } from "lucide-react";
 import type { Task, TaskPriority, TaskStatus } from "../types";
 import { PRIORITY_META, STATUS_META, STATUS_ORDER } from "../types";
 import type { TaskDraft } from "../hooks/useTasks";
@@ -33,7 +33,15 @@ interface Props {
   onSave: (draft: TaskFormDraft, id?: string) => Promise<void> | void;
 }
 
-const PRIORITIES: TaskPriority[] = ["low", "medium", "high"];
+const PRIORITIES: TaskPriority[] = ["trivial", "low", "medium", "high", "urgent"];
+
+const PRIORITY_ICON: Record<TaskPriority, typeof Minus> = {
+  trivial: Minus,
+  low: ArrowDown,
+  medium: Equal,
+  high: ArrowUp,
+  urgent: Flame,
+};
 
 export default function TaskModal({
   open,
@@ -178,20 +186,24 @@ export default function TaskModal({
                   Prioridad
                 </legend>
                 <div className="flex gap-1 rounded-xl bg-paper p-1 dark:bg-night">
-                  {PRIORITIES.map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setPriority(p)}
-                      className={`flex-1 rounded-lg px-2 py-1.5 text-[11px] font-bold transition-all ${
-                        priority === p
-                          ? "bg-ink text-paper shadow-card dark:bg-lime dark:text-ink"
-                          : "text-ink-faint hover:text-ink dark:hover:text-paper"
-                      }`}
-                    >
-                      {PRIORITY_META[p].label}
-                    </button>
-                  ))}
+                  {PRIORITIES.map((p) => {
+                    const PriorityIcon = PRIORITY_ICON[p];
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPriority(p)}
+                        className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg px-1.5 py-1.5 text-[10px] font-bold transition-all ${
+                          priority === p
+                            ? "bg-ink text-paper shadow-card dark:bg-lime dark:text-ink"
+                            : "text-ink-faint hover:text-ink dark:hover:text-paper"
+                        }`}
+                      >
+                        <PriorityIcon className="h-3.5 w-3.5" />
+                        {PRIORITY_META[p].label}
+                      </button>
+                    );
+                  })}
                 </div>
               </fieldset>
             </div>
